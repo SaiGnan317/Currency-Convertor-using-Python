@@ -1,0 +1,147 @@
+import customtkinter as ctk
+
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("green")
+
+# ---------------- DATA ----------------
+rates = {
+    "USD": 93.0, "INR": 1.0, "EUR": 107.0, "GBP": 123.0,
+    "JPY": 0.58, "AUD": 67.0, "CAD": 69.0, "CHF": 119.0,
+    "CNY": 12.8, "SGD": 73.0, "AED": 25.3, "HKD": 11.9,
+    "NZD": 56.0, "KRW": 0.07, "ZAR": 5.0, "RUB": 1.0,
+    "BRL": 18.5, "MXN": 5.5, "SAR": 24.8, "THB": 2.6,
+    "MYR": 20.0, "IDR": 0.0059
+}
+
+# ---------------- APP ----------------
+app = ctk.CTk()
+app.geometry("500x720")
+app.title("Currency Convert")
+
+from_cur = ctk.StringVar(value="USD")
+to_cur = ctk.StringVar(value="INR")
+
+active_select = "from"
+
+# ---------------- FUNCTIONS ----------------
+def convert():
+    try:
+        amt = float(entry.get())
+        f = from_cur.get()
+        t = to_cur.get()
+
+        result = (amt * rates[f]) / rates[t]
+
+        result_label.configure(text=f"{round(result,2)} {t}")
+        rate_label.configure(text=f"1 {f} = {round(rates[f]/rates[t],2)} {t}")
+
+        update_cards()
+
+    except:
+        result_label.configure(text="Invalid")
+
+def swap():
+    f = from_cur.get()
+    t = to_cur.get()
+    from_cur.set(t)
+    to_cur.set(f)
+    update_buttons()
+
+def update_buttons():
+    from_btn.configure(text=from_cur.get())
+    to_btn.configure(text=to_cur.get())
+
+# -------- DROPDOWN (BOTTOM PANEL) --------
+def open_dropdown(mode):
+    global active_select
+    active_select = mode
+
+    dropdown_frame.pack(side="bottom", pady=20)
+
+def select_currency(value):
+    if active_select == "from":
+        from_cur.set(value)
+    else:
+        to_cur.set(value)
+
+    update_buttons()
+    dropdown_frame.pack_forget()
+
+# -------- CARDS --------
+def update_cards():
+    for widget in bottom_frame.winfo_children():
+        widget.destroy()
+
+    base = from_cur.get()
+    keys = list(rates.keys())[:4]
+
+    for k in keys:
+        val = rates[base] / rates[k]
+        percent = (val - 1) * 100
+
+        box = ctk.CTkFrame(bottom_frame, corner_radius=15)
+        box.pack(side="left", padx=8)
+
+        ctk.CTkLabel(box, text=f"{base}/{k}").pack(pady=5)
+        ctk.CTkLabel(box, text=str(round(val,2)),
+                     font=("Segoe UI", 14, "bold")).pack()
+
+        color = "green" if percent >= 0 else "red"
+        ctk.CTkLabel(box, text=f"{round(percent,1)}%",
+                     text_color=color).pack()
+
+# ---------------- UI ----------------
+
+# Title
+ctk.CTkLabel(app, text="⚡ Currency Convert",
+             font=("Segoe UI", 22, "bold")).pack(pady=20)
+
+# Amount input
+entry = ctk.CTkEntry(app, height=50, corner_radius=15)
+entry.insert(0, "1")
+entry.pack(padx=30, fill="x")
+
+# Currency buttons
+frame = ctk.CTkFrame(app, fg_color="transparent")
+frame.pack(pady=15)
+
+from_btn = ctk.CTkButton(frame, text="USD", width=120,
+                         command=lambda: open_dropdown("from"))
+from_btn.grid(row=0, column=0, padx=10)
+
+swap_btn = ctk.CTkButton(frame, text="⇄", width=40, command=swap)
+swap_btn.grid(row=0, column=1)
+
+to_btn = ctk.CTkButton(frame, text="INR", width=120,
+                       command=lambda: open_dropdown("to"))
+to_btn.grid(row=0, column=2, padx=10)
+
+# Dropdown panel (BOTTOM)
+dropdown_frame = ctk.CTkScrollableFrame(app, width=360, height=180, corner_radius=20)
+
+for i, key in enumerate(rates):
+    ctk.CTkButton(dropdown_frame, text=key, width=140,
+                  command=lambda k=key: select_currency(k)
+                  ).grid(row=i//2, column=i%2, padx=5, pady=5)
+
+# Result box
+result_box = ctk.CTkFrame(app, corner_radius=20)
+result_box.pack(padx=30, pady=20, fill="x")
+
+rate_label = ctk.CTkLabel(result_box, text="")
+rate_label.pack(pady=5)
+
+result_label = ctk.CTkLabel(result_box, text="0.00",
+                           font=("Segoe UI", 28, "bold"))
+result_label.pack(pady=10)
+
+# Convert button
+ctk.CTkButton(app, text="Convert Now",
+              height=50, corner_radius=20,
+              command=convert).pack(padx=30, fill="x")
+
+# Bottom comparison cards
+bottom_frame = ctk.CTkFrame(app, fg_color="transparent")
+bottom_frame.pack(pady=20)
+
+app.mainloop()
